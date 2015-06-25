@@ -56,8 +56,15 @@ class ZendLdapDriver implements LdapDriverInterface
             $entries['count'] = count($entries);
         } catch (ZendLdapException $exception) {
             $this->zendExceptionHandler($exception);
-
-            throw new LdapDriverException('An error occur with the search operation.');
+            $msg = $exception->getMessage();
+            if ($exception->getCode() == 1 && preg_match('/000004DC\b/i', $msg) && preg_match('/DSID-0C0906DD\b/i', $msg))
+            {
+                throw $exception;
+            }
+            else
+            {
+                throw new LdapDriverException('An error occur with the search operation.');
+            }
         }
 
         return $entries;

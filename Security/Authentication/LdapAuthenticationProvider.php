@@ -5,12 +5,14 @@ namespace FR3D\LdapBundle\Security\Authentication;
 use FR3D\LdapBundle\Ldap\LdapManagerInterface;
 use Symfony\Component\Security\Core\Authentication\Provider\UserAuthenticationProvider;
 use Symfony\Component\Security\Core\Authentication\Token\UsernamePasswordToken;
+use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\AuthenticationServiceException;
 use Symfony\Component\Security\Core\Exception\BadCredentialsException;
 use Symfony\Component\Security\Core\Exception\UsernameNotFoundException;
 use Symfony\Component\Security\Core\User\UserCheckerInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Security\Core\User\UserProviderInterface;
+use Zend\Ldap\Exception\LdapException as ZendLdapException;
 
 class LdapAuthenticationProvider extends UserAuthenticationProvider
 {
@@ -57,6 +59,17 @@ class LdapAuthenticationProvider extends UserAuthenticationProvider
             return $user;
         } catch (UsernameNotFoundException $notFound) {
             throw $notFound;
+        } catch (ZendLdapException $exception) {
+        	$user = $this->ldapManager->createBlankUser();
+        	$user->setUsername($username);
+
+        	try {
+        		$this->checkAuthentication($user, $token);
+        		$user = $this->userProvider->loadUserByUsername($username);
+        	} catch (BadCredentialsException $e) {
+        		throw $e;
+        	}
+        	return $user;
         } catch (\Exception $repositoryProblem) {
             $e = new AuthenticationServiceException($repositoryProblem->getMessage(), (int) $repositoryProblem->getCode(), $repositoryProblem);
             $e->setToken($token);

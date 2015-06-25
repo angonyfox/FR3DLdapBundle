@@ -78,4 +78,9 @@ class LdapManager implements LdapManagerInterface
     {
         return $this->driver->bind($user, $password);
     }
+
+    public function createBlankUser(array $userAttributes = array())
+    {
+        return $this->hydrator->hydrate($userAttributes);
+    }
 }
